@@ -18,6 +18,7 @@ const RoutesConfig = () => (
     <Route path="/support" element={<Support />} />
     <Route path="/ticketlist" element={<TicketList />} />
     <Route path="/cart" element={<Cart />} />
+    <Route path="/ContactUs" element={<Support />} />
 
     {/* Protected routes explicitly */}
     <Route
