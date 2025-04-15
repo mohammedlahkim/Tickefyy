@@ -1,150 +1,265 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, User } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../api/api";
 import { toast } from "react-toastify";
+import { getProfile } from "../api/user";
+
+type Language = "English" | "French" | "Arabic";
+
+interface Translation {
+  firstName: string;
+  lastName: string;
+  birthdate: string;
+  password: string;
+  phone: string;
+  language: string;
+  email: string;
+  signup: string;
+  hide: string;
+  show: string;
+  consentSMS: string;
+  consentTerms: string;
+  termsTitle: string;
+  termsIntro: string;
+  term1: string;
+  term2: string;
+  term3: string;
+  term4: string;
+  term5: string;
+  term6: string;
+}
+
+interface Translations {
+  English: Translation;
+  French: Translation;
+  Arabic: Translation;
+}
 
 const Signup = () => {
   const [f_name, setFName] = useState("");
   const [l_name, setLName] = useState("");
+  const [birthdate, setBirthdate] = useState<Date | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [birthdate, setBirthdate] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showCameraPopup, setShowCameraPopup] = useState(false);
-  const [facingConsent, setFacingConsent] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [language, setLanguage] = useState<Language>("English");
 
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) navigate("/", { replace: true });
-  }, [user, navigate]);
+  const isRTL = language === "Arabic";
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-      toast.error("Unable to access camera");
+  const validateForm = () => {
+    if (!f_name.trim()) {
+      toast.error(`${translations[language].firstName} ${isRTL ? "مطلوب" : "is required"}`);
+      return false;
     }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      const tracks = stream.getTracks();
-      tracks.forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
+    if (!l_name.trim()) {
+      toast.error(`${translations[language].lastName} ${isRTL ? "مطلوب" : "is required"}`);
+      return false;
     }
-  };
-
-  const captureImage = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video && canvas) {
-      const context = canvas.getContext("2d");
-      if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-        console.log(canvas.toDataURL("image/jpeg"));
-        
-        return canvas.toDataURL("image/jpeg");
-      }
+    if (!birthdate) {
+      toast.error(`${translations[language].birthdate} ${isRTL ? "مطلوب" : "is required"}`);
+      return false;
     }
-    return null;
-  };
-
-  const handleCaptureAndSubmit = async () => {
-    const imageData = captureImage();
-    if (imageData) {
-      try {
-        await axios.post(`${API_BASE_URL}/auth/store-face-variable`, {
-          email,
-          image: imageData,
-        });
-        toast.success("Facial image captured successfully!");
-        stopCamera();
-        setShowCameraPopup(false);
-        await completeSignup();
-      } catch (err) {
-        console.error("Image processing error:", err);
-        toast.error("Failed to process facial image");
-      }
+    if (!email.trim()) {
+      toast.error(`${translations[language].email} ${isRTL ? "مطلوب" : "is required"}`);
+      return false;
     }
+    if (!password.trim()) {
+      toast.error(`${translations[language].password} ${isRTL ? "مطلوب" : "is required"}`);
+      return false;
+    }
+    if (!phone || phone.length < 10) {
+      toast.error(`${translations[language].phone} ${isRTL ? "يجب أن يكون 10 أرقام على الأقل" : "must be at least 10 digits"}`);
+      return false;
+    }
+    return true;
   };
 
   const completeSignup = async () => {
+    console.log("Attempting signup with:", { f_name, l_name, email, phone, birthdate: birthdate?.toISOString() });
     try {
-      const isoBirthdate = new Date(birthdate + "T00:00:00Z");
-      const res = await axios.post(`${API_BASE_URL}/auth/signup`, {
-        f_name,
-        l_name,
-        email,
-        password,
-        phone,
-        birthdate: isoBirthdate,
+      const formData = new FormData();
+      formData.append("f_name", f_name.trim());
+      formData.append("l_name", l_name.trim());
+      formData.append("birthdate", birthdate ? birthdate.toISOString().split("T")[0] : "");
+      formData.append("email", email.trim());
+      formData.append("password", password.trim());
+      formData.append("phone", phone.trim());
+      
+      console.log("Sending signup request to backend...");
+      // 1. Perform Signup POST
+      const signupRes = await axios.post(`${API_BASE_URL}/auth/signup`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+      console.log("Signup API Response Status:", signupRes.status);
+      console.log("Signup API Response Data:", signupRes.data);
 
-      const { jwt } = res.data;
+      // 2. Save the received JWT token
+      const { jwt } = signupRes.data; // Reverted: Only expect JWT in response data
+      if (!jwt) {
+        console.error("JWT token missing in signup response.");
+        throw new Error("Signup completed but no JWT token received.");
+      }
+      // REMOVED: Check for user data in response
       localStorage.setItem("token", jwt);
-      login({ name: `${f_name} ${l_name}`, email });
-      toast.success("Signed up successfully! Redirecting to login...");
+      console.log("JWT token saved to localStorage.");
+
+      // 3. Construct User object manually (Reverted)
+      const newUserForContext: User = {
+        id: 0, // Reverted: Placeholder ID
+        f_name: f_name.trim(),
+        l_name: l_name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        birthdate: birthdate ? birthdate.toISOString().split("T")[0] : undefined,
+        picture: undefined, 
+        nationality: undefined, 
+        loginMethod: 'email',
+      };
+      console.log("Constructed user object for context (manual):", newUserForContext);
+      
+      // 4. Call context login with the manually constructed user data (Reverted)
+      console.log("Calling context login function...");
+      login(newUserForContext); 
+      console.log("Context login function called.");
+      
+      toast.success(translations[language].signup + " successful!");
+      
+      // Delay navigation slightly to allow state update to settle
       setTimeout(() => {
-        navigate("/login");
-      }, 1500);
-    } catch (err) {
-      console.error("Signup error", err.response?.data || err.message);
-      toast.error("Signup failed!");
+        console.log("Navigating to /facialrecognition (delayed)...");
+        navigate("/facialrecognition", { replace: true }); // Use replace to avoid back button issues
+      }, 0); // Minimal delay
+
+    } catch (err: any) { 
+      console.error("SIGNUP FAILED:", err);
+      // Log specific parts of the error if available
+      if (err.response) {
+        console.error("Signup Error Response Data:", err.response.data);
+        console.error("Signup Error Response Status:", err.response.status);
+        console.error("Signup Error Response Headers:", err.response.headers);
+      } else if (err.request) {
+        console.error("Signup Error Request:", err.request);
+      } else {
+        console.error("Signup Error Message:", err.message);
+      }
+      
+      localStorage.removeItem("token"); 
+      toast.error(err.response?.data?.message || "Signup failed!"); 
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    await completeSignup();
+  };
 
-    if (facingConsent) {
-      setShowCameraPopup(true);
-      setTimeout(() => startCamera(), 100);
-    } else {
-      await completeSignup();
-    }
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+  };
+
+  const formatDateForInput = (date: Date | null) => {
+    if (!date) return "";
+    return date.toISOString().split("T")[0];
+  };
+
+  const translations: Translations = {
+    English: {
+      firstName: "First name",
+      lastName: "Last name",
+      birthdate: "Birthdate",
+      password: "Password",
+      phone: "Phone number",
+      language: "Language",
+      email: "Email address",
+      signup: "Sign up",
+      hide: "Hide",
+      show: "Show",
+      consentSMS: "I consent to receive SMS, emails, updates, events, and promotions.",
+      consentTerms: "I agree to the Terms and Privacy Policy.",
+      termsTitle: "Facial recognition",
+      termsIntro: "By signing up, you agree to the following terms:",
+      term1: "Facial recognition is used solely for the following purposes:",
+      term2: "Identity verification and user authentication",
+      term3: "Ticket validation and access control",
+      term4: "Fraud prevention and enhanced security",
+      term5: "We do not use facial recognition for surveillance, behavioral analysis, or third-party advertising.",
+      term6: "You must provide explicit, informed, and verifiable consent before using the facial recognition feature.",
+    },
+    French: {
+      firstName: "Prénom",
+      lastName: "Nom de famille",
+      birthdate: "Date de naissance",
+      password: "Mot de passe",
+      phone: "Numéro de téléphone",
+      language: "Langue",
+      email: "Adresse e-mail",
+      signup: "S'inscrire",
+      hide: "Cacher",
+      show: "Montrer",
+      consentSMS: "J'accepte de recevoir des SMS, des e-mails, des mises à jour, des événements et des promotions.",
+      consentTerms: "J'accepte les Conditions et la Politique de confidentialité.",
+      termsTitle: "Reconnaissance faciale",
+      termsIntro: "En vous inscrivant, vous acceptez les conditions suivantes :",
+      term1: "La reconnaissance faciale est utilisée uniquement pour :",
+      term2: "Vérification d'identité et authentification des utilisateurs",
+      term3: "Validation des billets et contrôle d'accès",
+      term4: "Prévention des fraudes et sécurité renforcée",
+      term5: "Nous n'utilisons pas la reconnaissance faciale pour la surveillance, l'analyse comportementale ou la publicité tierce.",
+      term6: "Vous devez donner un consentement explicite, informé et vérifiable avant d'utiliser la fonctionnalité de reconnaissance faciale.",
+    },
+    Arabic: {
+      firstName: "الاسم الأول",
+      lastName: "اسم العائلة",
+      birthdate: "تاريخ الميلاد",
+      password: "كلمة المرور",
+      phone: "رقم الهاتف",
+      language: "اللغة",
+      email: "البريد الإلكتروني",
+      signup: "التسجيل",
+      hide: "إخفاء",
+      show: "إظهار",
+      consentSMS: "أوافق على تلقي الرسائل النصية، البريد الإلكتروني، التحديثات، الأحداث، والعروض الترويجية.",
+      consentTerms: "أوافق على الشروط وسياسة الخصوصية.",
+      termsTitle: "التعرف على الوجه",
+      termsIntro: "بالتسجيل، فإنك توافق على الشروط التالية:",
+      term1: "يتم استخدام التعرف على الوجه فقط للأغراض التالية:",
+      term2: "التحقق من الهوية وتسجيل دخول المستخدم",
+      term3: "التحقق من التذاكر والتحكم في الوصول",
+      term4: "منع الاحتيال وتعزيز الأمان",
+      term5: "لا نستخدم التعرف على الوجه للمراقبة، التحليل السلوكي، أو الإعلانات من جهات خارجية.",
+      term6: "يجب عليك تقديم موافقة صريحة ومستنيرة وقابلة للتحقق قبل استخدام ميزة التعرف على الوجه.",
+    },
   };
 
   return (
     <div
-      className="w-full min-h-screen flex justify-center items-center bg-cover bg-center pt-32 pb-8 px-4"
+      className={`w-full min-h-screen flex justify-center items-center bg-cover bg-center pt-24 pb-12 px-4`}
       style={{ backgroundImage: "url('/stadium.jpg')" }}
+      dir={isRTL ? "rtl" : "ltr"}
     >
-      <div className="flex md:flex-row justify-center items-center gap-6 w-full max-w-5xl mx-auto ">
-        <div className="bg-white bg-opacity-15 backdrop-blur-lg shadow-xl rounded-lg p-6 w-full max-w-[400px]">
-          <div className="flex justify-center items-center mb-3">
-            <img
-              src="/mlogo.png"
-              alt="Logo"
-              className="h-12 w-auto object-contain self-center"
-            />
+      <div className="flex md:flex-row justify-center items-center gap-6 w-full max-w-5xl mx-auto">
+        <div className="bg-white bg-opacity-15 backdrop-blur-lg shadow-2xl rounded-xl p-8 w-full max-w-[480px]">
+          <div className="flex justify-center items-center mb-4">
+            <img src="/mlogo.png" alt="Logo" className="h-16 w-auto object-contain" />
           </div>
-
-          <h2 className="text-center text-2xl font-bold text-white mb-4">
-            Sign up
+          <h2 className="text-center text-3xl font-bold text-white mb-6">
+            {translations[language].signup}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className={`grid grid-cols-2 gap-4 mb-4 ${isRTL ? "flex-row-reverse" : ""}`}>
               <input
                 type="text"
-                placeholder="First name"
+                placeholder={translations[language].firstName}
                 className="input-field"
                 value={f_name}
                 onChange={(e) => setFName(e.target.value)}
@@ -152,7 +267,7 @@ const Signup = () => {
               />
               <input
                 type="text"
-                placeholder="Last name"
+                placeholder={translations[language].lastName}
                 className="input-field"
                 value={l_name}
                 onChange={(e) => setLName(e.target.value)}
@@ -161,20 +276,20 @@ const Signup = () => {
             </div>
 
             <input
-              type="email"
-              placeholder="Email address"
-              className="input-field"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="date"
+              placeholder={translations[language].birthdate}
+              className="input-field mb-4"
+              value={formatDateForInput(birthdate)}
+              onChange={(e) => setBirthdate(e.target.value ? new Date(e.target.value) : null)}
               required
             />
 
             <input
-              type="date"
-              placeholder="Birthdate"
-              className="input-field"
-              value={birthdate}
-              onChange={(e) => setBirthdate(e.target.value)}
+              type="email"
+              placeholder={translations[language].email}
+              className="input-field mb-4"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
 
@@ -182,30 +297,32 @@ const Signup = () => {
               country={"us"}
               value={phone}
               onChange={(phone) => setPhone(phone)}
+              inputProps={{ required: true }}
               inputStyle={{
                 width: "100%",
-                height: "40px",
-                borderRadius: "20px",
+                height: "48px",
+                borderRadius: "25px",
                 backgroundColor: "rgba(255,255,255,0.3)",
                 color: "white",
-                paddingLeft: "45px",
+                paddingLeft: isRTL ? "15px" : "50px",
+                paddingRight: isRTL ? "50px" : "15px",
                 border: "none",
                 backdropFilter: "blur(8px)",
+                direction: isRTL ? "rtl" : "ltr",
+                textAlign: isRTL ? "right" : "left",
               }}
               buttonStyle={{
-                borderRadius: "20px 0 0 20px",
+                borderRadius: isRTL ? "0 25px 25px 0" : "25px 0 0 25px",
                 backdropFilter: "blur(8px)",
                 backgroundColor: "rgba(255,255,255,0.5)",
               }}
-              containerStyle={{
-                borderRadius: "20px",
-              }}
+              containerStyle={{ direction: isRTL ? "rtl" : "ltr" }}
             />
 
-            <div className="relative">
+            <div className="relative mt-4">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder={translations[language].password}
                 className="input-field"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -213,89 +330,85 @@ const Signup = () => {
               />
               <button
                 type="button"
-                className="absolute right-3 top-2.5 text-white text-sm"
+                className={`absolute ${isRTL ? "left-4" : "right-4"} top-3 text-white text-sm`}
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? translations[language].hide : translations[language].show}
               </button>
             </div>
 
-            <div className="text-[10px] text-white space-y-1">
-              <label className="flex items-start gap-1.5">
-                <input type="checkbox" className="mt-0.5" required />
-                I consent to receive SMS, emails, updates, events, and promotions.
+            <div className={`text-xs text-white space-y-2 mt-4 ${isRTL ? "text-right" : "text-left"}`}>
+              <label className="flex items-start gap-2">
+                <input type="checkbox" className="mt-1" required />
+                <span>{translations[language].consentSMS}</span>
               </label>
-              <label className="flex items-start gap-1.5">
-                <input type="checkbox" className="mt-0.5" required />
-                I agree to the <a href="#" className="underline">Terms</a> and{" "}
-                <a href="#" className="underline">Privacy Policy</a>.
+              <label className="flex items-start gap-2 text-xs">
+                <input type="checkbox" className="mt-1" required />
+                <span>
+                  {translations[language].consentTerms}{" "}
+                  <a href="#" className="underline">
+                    {translations[language].consentTerms.includes("Terms")
+                      ? "Terms"
+                      : translations[language].consentTerms.includes("Conditions")
+                      ? "Conditions"
+                      : "الشروط"}
+                  </a>{" "}
+                  {translations[language].consentTerms.includes("and")
+                    ? "and"
+                    : translations[language].consentTerms.includes("et")
+                    ? "et"
+                    : "و"}{" "}
+                  <a href="#" className="underline">
+                    {translations[language].consentTerms.includes("Privacy Policy")
+                      ? "Privacy Policy"
+                      : translations[language].consentTerms.includes("Politique de confidentialité")
+                      ? "Politique de confidentialité"
+                      : "سياسة الخصوصية"}
+                  </a>
+                </span>
               </label>
-              <label className="flex items-start gap-1.5">
-                <input
-                  type="checkbox"
-                  className="mt-0.5"
-                  checked={facingConsent}
-                  onChange={(e) => setFacingConsent(e.target.checked)}
-                />
-                I consent to use Facial recognition
-              </label>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="mb-2 font-medium text-white">{translations[language].language}</h3>
+              <div className={`flex ${isRTL ? "flex-row-reverse" : "flex-row"} gap-4`}>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange("English")}
+                  className={`bg-white bg-opacity-15 px-4 py-2 rounded-xl transition-colors ${
+                    language === "English" ? "text-lime-400 font-bold" : "text-white opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange("French")}
+                  className={`bg-white bg-opacity-15 px-4 py-2 rounded-xl transition-colors ${
+                    language === "French" ? "text-lime-400 font-bold" : "text-white opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  French
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange("Arabic")}
+                  className={`bg-white bg-opacity-15 px-4 py-2 rounded-xl transition-colors ${
+                    language === "Arabic" ? "text-lime-400 font-bold" : "text-white opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  العربية
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
-              className="mt-3 w-full bg-white py-2 rounded-full shadow-lg text-base font-semibold"
+              className="mt-4 w-full bg-white py-2.5 rounded-full shadow-xl text-lg font-bold text-black hover:bg-gray-200 transition"
             >
-              Sign up
+              {translations[language].signup}
             </button>
           </form>
-        </div>
-
-        {showCameraPopup && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-md w-full">
-              <h3 className="text-lg font-bold mb-4">Capture Facial Image (Required)</h3>
-              <video ref={videoRef} className="w-full mb-4 rounded" />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="flex gap-4">
-                <button
-                  onClick={handleCaptureAndSubmit}
-                  className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-                >
-                  Capture & Continue
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCameraPopup(false);
-                    setFacingConsent(false);
-                    stopCamera();
-                  }}
-                  className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="w-full max-w-[300px] p-6 bg-black bg-opacity-70 rounded-lg shadow-lg">
-          <h3 className="text-xl font-bold text-white mb-3 neon-text">
-            Facial recognition
-          </h3>
-          <p className="text-sm text-gray-300">
-            By signing up, you agree to the following terms:
-          </p>
-          <ul className="text-sm text-gray-300 list-disc list-inside mt-2 space-y-1">
-            <li>Facial recognition is used solely for the following purposes:</li>
-            <li>Identity verification and user authentication</li>
-            <li>Ticket validation and access control</li>
-            <li>Fraud prevention and enhanced security</li>
-            <li>We do not use facial recognition for surveillance, behavioral analysis, or third-party advertising.</li>
-            <li>You must provide explicit, informed, and verifiable consent before using the facial recognition feature. You may withdraw your consent at any time by disabling the feature or contacting us directly.</li>
-          </ul>
-          <p className="text-sm text-gray-300 mt-3">
-            If you are willing to do Facial recognition please agree to click on the checkbox
-          </p>
         </div>
       </div>
     </div>
@@ -303,16 +416,3 @@ const Signup = () => {
 };
 
 export default Signup;
-
-// Add this CSS in your global stylesheet (e.g., index.css or a separate CSS file)
-const neonStyles = `
-  .neon-text {
-    color: #fff;
-    text-shadow:
-      0 0 5px #fff,
-      0 0 10px #fff,
-      0 0 20px #0ff,
-      0 0 40px #0ff,
-      0 0 80px #0ff;
-  }
-`;
