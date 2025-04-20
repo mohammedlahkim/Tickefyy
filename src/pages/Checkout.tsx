@@ -75,7 +75,8 @@ interface AuthContextType {
 const Checkout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { match, ticketDetails }: { match?: Match; ticketDetails?: TicketDetails } = location.state || {};
+  const { match }: { match?: Match } = location.state || {};
+  const { ticketDetails }: { ticketDetails?: TicketDetails } = location.state || {};
   const [isAuthSuccess, setIsAuthSuccess] = useState(false);
   const [cardNumber, setCardNumber] = useState('');
   const [cardholderName, setCardholderName] = useState('');
@@ -84,7 +85,7 @@ const Checkout: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedCardType, setSelectedCardType] = useState<'visa' | 'mastercard' | 'verve'>('visa');
   const { user } = useAuth() as AuthContextType;
-  const { clearCart } = useCart();
+  const { clearCart, removeFromCart } = useCart();
 
   const formatMatchTime = (utcDate: string) => {
     const date = new Date(utcDate);
@@ -239,8 +240,10 @@ const Checkout: React.FC = () => {
       const ticketData = await ticketResponse.json();
       console.log('Ticket created successfully:', ticketData);
       
-      // Clear the cart after successful purchase
-      clearCart();
+      // Remove only the purchased ticket from the cart
+      if (match?.id) {
+        removeFromCart(match.id);
+      }
       
       // Show success message and navigate to confirmation
       toast.success('Payment processed successfully!');
