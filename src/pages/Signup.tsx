@@ -67,6 +67,22 @@ const Signup = () => {
       toast.error(`${translations[language].birthdate} ${isRTL ? "مطلوب" : "is required"}`);
       return false;
     }
+
+    // Check if user is at least 18 years old
+    const today = new Date();
+    const birthdateDate = new Date(birthdate);
+    const age = today.getFullYear() - birthdateDate.getFullYear();
+    const monthDiff = today.getMonth() - birthdateDate.getMonth();
+    
+    if (age < 18 || (age === 18 && monthDiff < 0) || (age === 18 && monthDiff === 0 && today.getDate() < birthdateDate.getDate())) {
+      toast.error(language === "Arabic" 
+        ? "هذه المنصة للبالغين فقط"
+        : language === "French"
+        ? "Cette plateforme est réservée aux adultes"
+        : "This platform is for Adults only");
+      return false;
+    }
+
     if (!email.trim()) {
       toast.error(`${translations[language].email} ${isRTL ? "مطلوب" : "is required"}`);
       return false;

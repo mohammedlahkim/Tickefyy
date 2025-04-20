@@ -40,33 +40,36 @@ const Navbar = () => {
           </>
         )}
         {user && (
-          <div ref={dropdownRef} className="profile-container">
-            <img
-              src={user.picture}
-              alt="Profile"
-              className="profile-img"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            />
-            <FaChevronDown
-              className="dropdown-icon"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            />
+          <>
+            <Link to="/my-tickets">My Tickets</Link>
+            <div ref={dropdownRef} className="profile-container">
+              <img
+                src={user.picture}
+                alt="Profile"
+                className="profile-img"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              />
+              <FaChevronDown
+                className="dropdown-icon"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              />
 
-            {dropdownOpen && (
-              <div className="dropdown-menu">
-                <Link to="/profile" className="flex items-center gap-2">
-                  <FaUser /> Profile
-                </Link>
-                <Link to="/support">Support</Link>
-                <button
-                  onClick={handleLogout}
-                  className="logout-btn text-red-600 hover:text-red-800 flex items-center gap-2"
-                >
-                  <FaSignOutAlt /> Logout
-                </button>
-              </div>
-            )}
-          </div>
+              {dropdownOpen && (
+                <div className="dropdown-menu">
+                  <Link to="/profile" className="flex items-center gap-2">
+                    <FaUser /> Profile
+                  </Link>
+                  <Link to="/support">Support</Link>
+                  <button
+                    onClick={handleLogout}
+                    className="logout-btn text-red-600 hover:text-red-800 flex items-center gap-2"
+                  >
+                    <FaSignOutAlt /> Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </nav>

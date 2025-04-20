@@ -1,14 +1,48 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+interface Match {
+  id: number;
+  homeTeam: {
+    name: string;
+    logo: string;
+  };
+  awayTeam: {
+    name: string;
+    logo: string;
+  };
+  date: string;
+}
 
 const TicketCart = () => {
-  const { cart, removeFromCart } = useCart(); // Get cart and removeFromCart from context
+  const { cart: cartItems, removeFromCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const formatMatchTime = (utcDate: string) => {
     const date = new Date(utcDate);
     return date.toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
+    });
+  };
+
+  const handlePurchase = (match: Match) => {
+    if (!user) {
+      toast.error('Please log in to purchase tickets');
+      navigate('/login', { state: { from: '/cart' } });
+      return;
+    }
+    navigate('/buy-ticket', { 
+      state: { 
+        match: {
+          ...match,
+          matchId: match.id
+        }
+      } 
     });
   };
 
@@ -120,10 +154,12 @@ const TicketCart = () => {
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            transition: all 0.2s ease;
           }
 
           .purchase-button:hover {
             background-color: #f0f0f0;
+            transform: translateY(-2px);
           }
 
           .delete-button {
@@ -134,10 +170,12 @@ const TicketCart = () => {
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            transition: all 0.2s ease;
           }
 
           .delete-button:hover {
             background-color: #cc0000;
+            transform: translateY(-2px);
           }
         `}
       </style>
@@ -147,11 +185,11 @@ const TicketCart = () => {
         <div className="background">
           <div className="overlay">
             <h2 className="title">Tickets added to Cart</h2>
-            {cart.length === 0 ? (
+            {cartItems.length === 0 ? (
               <p className="text-white">Your cart is empty</p>
             ) : (
               <div className="grid">
-                {cart.map((match) => (
+                {cartItems.map((match) => (
                   <div key={match.id} className="card">
                     <div className="match-info">
                       <div className="team">
@@ -166,7 +204,12 @@ const TicketCart = () => {
                     </div>
                     <p className="time">{formatMatchTime(match.date)}</p>
                     <div className="button-container">
-                      <button className="purchase-button">Purchase</button>
+                      <button 
+                        className="purchase-button"
+                        onClick={() => handlePurchase(match)}
+                      >
+                        Purchase
+                      </button>
                       <button
                         className="delete-button"
                         onClick={() => removeFromCart(match.id)}

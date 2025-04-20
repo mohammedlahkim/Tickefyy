@@ -14,6 +14,7 @@ interface CartContextType {
   cart: Match[];
   addToCart: (match: Match) => void;
   removeFromCart: (matchId: number) => void;
+  clearCart: () => void;
 }
 
 // Create the CartContext
@@ -37,8 +38,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prevCart) => prevCart.filter((match) => match.id !== matchId));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );

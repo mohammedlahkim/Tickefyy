@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import axios from "axios";
 import API_BASE_URL from "../api/api";
+import { getMatchData } from '../utils/matchDataService';
 
 interface Fixture {
   id: number;
@@ -21,49 +22,11 @@ interface Fixture {
   date: string;
 }
 
-const fetchLastMatches = async (): Promise<Fixture[]> => {
-  try {
-    const response = await fetch('https://v3.football.api-sports.io/fixtures?live=all', {
-      headers: {
-        'x-apisports-key': '110b44c65ce120fd162a0db5b5ac152b',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.response.slice(0, 3).map((match: any) => ({
-      id: match.fixture.id,
-      homeTeam: {
-        name: match.teams.home.name,
-        logo: match.teams.home.logo,
-      },
-      awayTeam: {
-        name: match.teams.away.name,
-        logo: match.teams.away.logo,
-      },
-      league: {
-        name: match.league.name,
-      },
-      date: match.fixture.date,
-    }));
-  } catch (error) {
-    console.error('Error fetching matches:', error);
-    return [];
-  }
-};
-
 const HomePage = () => {
   const [lastMatches, setLastMatches] = useState<Fixture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const [showCameraPopup, setShowCameraPopup] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [capturedImage, setCapturedImage] = useState<Blob | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const navigate = useNavigate();
 
@@ -71,10 +34,35 @@ const HomePage = () => {
     const loadMatches = async () => {
       try {
         setLoading(true);
-        const matchData = await fetchLastMatches();
-        setLastMatches(matchData);
-        setError(null);
+        console.log('Starting to load matches...');
+        const matchData = await getMatchData();
+        console.log('Received match data:', matchData);
+        
+        if (matchData && matchData.response && Array.isArray(matchData.response)) {
+          const matches = matchData.response.slice(0, 3).map((match: any) => ({
+            id: match.fixture.id,
+            homeTeam: {
+              name: match.teams.home.name,
+              logo: match.teams.home.logo,
+            },
+            awayTeam: {
+              name: match.teams.away.name,
+              logo: match.teams.away.logo,
+            },
+            league: {
+              name: match.league.name,
+            },
+            date: match.fixture.date,
+          }));
+          console.log('Processed matches:', matches);
+          setLastMatches(matches);
+          setError(null);
+        } else {
+          console.error('Invalid match data format:', matchData);
+          setError('Failed to load matches - Invalid data format');
+        }
       } catch (err) {
+        console.error('Error loading matches:', err);
         setError('Failed to load matches');
       } finally {
         setLoading(false);
@@ -100,134 +88,6 @@ const HomePage = () => {
   };
 
   const userDisplay = user ? user.email || "User" : "NOT LOGGED IN";
-
-  const handleButtonClick = () => {
-    if (user) {
-      setShowCameraPopup(true);
-      startCamera();
-    } else {
-      window.location.href = "/login";
-    }
-  };
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false,
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-    } catch (error: any) {
-      console.error("Error accessing camera:", error);
-      alert("Unable to access camera: " + error.message);
-      setShowCameraPopup(false);
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  const captureImage = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video && canvas) {
-      const context = canvas.getContext("2d");
-      if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              setCapturedImage(blob);
-              processImageForFacialRecognition(blob);
-            }
-          },
-          "image/jpeg",
-          0.9
-        );
-      }
-    }
-  };
-
-  const processImageForFacialRecognition = async (imageBlob: Blob) => {
-    stopCamera();
-    setShowCameraPopup(false);
-    
-    if (!imageBlob) {
-      toast.error("Failed to capture image. Please try again.");
-      return;
-    }
-    
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Authentication required. Please log in again.");
-      navigate("/login");
-      return;
-    }
-    
-    const formData = new FormData();
-    const timestamp = new Date().getTime();
-    formData.append('facePhoto', imageBlob, `facial_recognition_${timestamp}.jpg`);
-    
-    toast.info("Processing facial recognition...");
-    
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/images`, formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      console.log("Facial recognition response:", response.data);
-      
-      const isImageValid = 
-        typeof response.data === 'object' && 'is_image_valid' in response.data 
-          ? response.data.is_image_valid 
-          : response.data === "Image quality validated.";
-          
-      if (isImageValid) {
-        toast.success("Facial recognition successful!");
-      } else {
-        toast.error("Facial recognition failed. Please try again with a clearer image.");
-      }
-    } catch (error: any) {
-      console.error("Error in facial recognition:", error);
-      
-      if (error.response) {
-        console.error("Response status:", error.response.status);
-        console.error("Response data:", error.response.data);
-        
-        if (error.response.status === 401) {
-          toast.error("Authentication failed. Please log in again.");
-          navigate("/login");
-        } else {
-          toast.error(typeof error.response.data === 'string' 
-            ? error.response.data 
-            : "Facial recognition failed. Please try again.");
-        }
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        toast.error("No response from server. Please check your connection.");
-      } else {
-        console.error("Error message:", error.message);
-        toast.error("An error occurred. Please try again.");
-      }
-    }
-  };
-
-  const handleCapture = () => {
-    captureImage();
-  };
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-gray-900 text-white">
@@ -386,12 +246,14 @@ const HomePage = () => {
                 <span>{userDisplay}</span>
                 <div className="w-10 h-10 bg-gray-500 rounded-full"></div>
               </div>
-              <button
-                onClick={handleButtonClick}
-                className="w-full bg-green-500 text-black font-bold py-2 px-4 rounded hover:bg-green-600 transition"
-              >
-                {user ? "Use Facial Recognition" : "Login"}
-              </button>
+              {!user && (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="w-full bg-green-500 text-black font-bold py-2 px-4 rounded hover:bg-green-600 transition"
+                >
+                  Login
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -413,35 +275,6 @@ const HomePage = () => {
             </div>
           </div>
         </div>
-
-        {/* Camera Popup */}
-        {showCameraPopup && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-md w-full">
-              <h3 className="text-lg font-bold mb-4">Capture Facial Image</h3>
-              <video ref={videoRef} className="w-full mb-4 rounded" autoPlay playsInline />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="flex gap-4">
-                <button
-                  onClick={handleCapture}
-                  className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-                >
-                  Capture
-                </button>
-                <button
-                  onClick={() => {
-                    stopCamera();
-                    setShowCameraPopup(false);
-                    setCapturedImage(null);
-                  }}
-                  className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

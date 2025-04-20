@@ -10,6 +10,10 @@ import Support from "./pages/Support";
 import ProtectedRoute from "./components/ProtectedRoute";
 import FacialRecognition from "./pages/FacialRecognition";
 import FaceCapture from "./pages/FaceCapture";
+import BuyTicket from "./pages/BuyTicket";
+import Checkout from "./pages/Checkout";
+import ConfirmationPage from "./pages/ConfirmationPage";
+import MyTickets from "./pages/MyTickets";
 import { useAuth } from "./context/AuthContext";
 
 const RoutesConfig = () => {
@@ -26,8 +30,26 @@ const RoutesConfig = () => {
       <Route path="/cart" element={<Cart />} />
       <Route path="/ContactUs" element={<Support />} />
       <Route path="/FacialRecognition" element={<FacialRecognition />} />
+      <Route path="/buy-ticket" element={<BuyTicket />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route
+        path="/confirmation"
+        element={
+          <ProtectedRoute>
+            <ConfirmationPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected routes */}
+      <Route
+        path="/my-tickets"
+        element={
+          <ProtectedRoute>
+            <MyTickets />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/profile"
         element={
