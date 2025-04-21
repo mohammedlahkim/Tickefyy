@@ -15,7 +15,6 @@ const AuthComponent: React.FC<AuthComponentProps> = ({ children, onAuthSuccess }
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { user } = useAuth();
 
-  // Use actual auth logic
   useEffect(() => {
     if (user) {
       setIsAuthenticated(true);
@@ -25,21 +24,28 @@ const AuthComponent: React.FC<AuthComponentProps> = ({ children, onAuthSuccess }
 
   if (!isAuthenticated) {
     return (
-      <div className="">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-          <h2 className="text-xl font-bold mb-4 text-center">Please Log In</h2>
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50 min-h-screen">
+        <div className="bg-black bg-opacity-80 p-8 rounded-xl shadow-2xl w-full max-w-md mx-4 border border-gray-800 flex flex-col items-center">
+          <h2 className="text-2xl font-bold mb-6 text-white text-center">Please Log In</h2>
           <Link
             to="/login"
-            className="block text-center bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+            className="block w-full max-w-xs py-3 px-4 text-center bg-[#10B981] hover:bg-[#059669] text-white font-semibold rounded-lg transition-all duration-200 transform hover:translate-y-[-2px] hover:shadow-lg"
           >
             Log In
           </Link>
+          <p className="mt-4 text-gray-400 text-sm text-center">
+            Please log in to complete your purchase
+          </p>
         </div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center">
+      {children}
+    </div>
+  );
 };
 
 interface Match {
@@ -268,192 +274,411 @@ const Checkout: React.FC = () => {
 
   return (
     <AuthComponent onAuthSuccess={() => setIsAuthSuccess(true)}>
-      <div className="">
-        {/* Inline Styles */}
+      <div className="w-full max-w-7xl mx-auto px-4 py-8">
         <style>
           {`
-            .input-field {
+            .checkout-container {
               width: 100%;
-              padding: 12px;
-              border: 1px solid #ccc;
-              border-radius: 25px;
-              background-color: rgba(255, 255, 255, 0.9);
-              font-size: 16px;
-              color: #333;
-              outline: none;
-              transition: border-color 0.3s ease;
+              height: calc(100vh - var(--navbar-height));
+              max-width: 1536px;
+              margin: 0 auto;
+              padding: clamp(1rem, 2vw, 1.5rem);
+              display: flex;
+              flex-direction: column;
+              gap: clamp(1rem, 2vw, 1.5rem);
             }
 
-            .input-field:focus {
-              border-color: #4a90e2;
-              box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+            .match-preview {
+              width: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: clamp(0.5rem, 1.5vw, 1rem);
+              background: rgba(0, 0, 0, 0.8);
+              border-radius: var(--card-border-radius);
+              backdrop-filter: blur(8px);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              flex-shrink: 0;
             }
 
-            .auth-button {
-              width: 100%;
-              padding: 12px;
-              border-radius: 25px;
-              font-size: 16px;
+            .match-teams {
+              display: flex;
+              align-items: center;
+              gap: clamp(1rem, 4vw, 2rem);
+            }
+
+            .team-logo {
+              width: clamp(2.5rem, 8vw, 4rem);
+              height: clamp(2.5rem, 8vw, 4rem);
+              object-fit: contain;
+            }
+
+            .vs-text {
+              font-size: clamp(1.25rem, 3vw, 1.75rem);
               font-weight: bold;
+              color: #10B981;
+            }
+
+            .checkout-content {
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: clamp(1rem, 2vw, 1.5rem);
+              flex: 1;
+              min-height: 0;
+              overflow: hidden;
+            }
+
+            @media (min-width: 768px) {
+              .checkout-content {
+                grid-template-columns: 1fr 1fr;
+              }
+            }
+
+            .ticket-info, .payment-form {
+              background: rgba(0, 0, 0, 0.8);
+              border-radius: var(--card-border-radius);
+              padding: clamp(1rem, 2vw, 1.5rem);
+              color: white;
+              backdrop-filter: blur(8px);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              overflow-y: auto;
+              scrollbar-width: thin;
+              scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+            }
+
+            .ticket-info::-webkit-scrollbar,
+            .payment-form::-webkit-scrollbar {
+              width: 6px;
+            }
+
+            .ticket-info::-webkit-scrollbar-thumb,
+            .payment-form::-webkit-scrollbar-thumb {
+              background-color: rgba(255, 255, 255, 0.2);
+              border-radius: 3px;
+            }
+
+            .ticket-header, .form-header {
+              font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+              font-weight: bold;
+              margin-bottom: clamp(0.75rem, 2vw, 1rem);
+              text-align: center;
+            }
+
+            .ticket-details {
+              display: flex;
+              flex-direction: column;
+              gap: 0.75rem;
+            }
+
+            .detail-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 0.5rem 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .detail-label {
+              color: rgba(255, 255, 255, 0.7);
+              font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+            }
+
+            .detail-value {
+              font-weight: 500;
+              font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+            }
+
+            .card-types {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 0.5rem;
+              margin-bottom: 1rem;
+            }
+
+            .card-type-button {
+              position: relative;
+              padding: clamp(0.75rem, 2vw, 1rem);
+              border-radius: 0.75rem;
+              font-weight: 700;
+              font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+              letter-spacing: 0.5px;
+              transition: all 0.2s ease;
               border: none;
               cursor: pointer;
-              transition: background-color 0.3s ease, transform 0.1s ease;
+              overflow: hidden;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 3.5rem;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
 
-            .auth-button:hover {
-              transform: translateY(-2px);
-            }
-
-            .auth-button:active {
-              transform: translateY(0);
-            }
-
-            .card-button {
-              border: 1px solid #ccc;
-              border-radius: 12px;
-              padding: 8px;
-              background: white;
-              transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
-
-            .card-button:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-
-            .toggle-switch {
-              position: relative;
-              display: inline-block;
-              width: 40px;
-              height: 20px;
-            }
-
-            .toggle-switch input {
-              opacity: 0;
-              width: 0;
-              height: 0;
-            }
-
-            .slider {
+            .card-type-button::before {
+              content: '';
               position: absolute;
-              cursor: pointer;
               top: 0;
               left: 0;
               right: 0;
               bottom: 0;
-              background-color: #ccc;
-              transition: 0.4s;
-              border-radius: 20px;
+              opacity: 0;
+              transition: opacity 0.2s ease;
             }
 
-            .slider:before {
-              position: absolute;
-              content: "";
-              height: 16px;
-              width: 16px;
-              left: 2px;
-              bottom: 2px;
-              background-color: white;
-              transition: 0.4s;
-              border-radius: 50%;
+            .card-type-button:hover::before {
+              opacity: 1;
             }
 
-            input:checked + .slider {
-              background-color: #4a90e2;
+            /* Visa Card Style */
+            .card-type-button.visa {
+              background: linear-gradient(135deg, #1A1F71 0%, #2B3190 100%);
+              color: white;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
             }
 
-            input:checked + .slider:before {
-              transform: translateX(20px);
+            .card-type-button.visa.selected {
+              background: white;
+              color: #1A1F71;
+              text-shadow: none;
+              border: 2px solid #1A1F71;
+            }
+
+            /* Mastercard Style */
+            .card-type-button.mastercard {
+              background: linear-gradient(135deg, #EB001B 0%, #FF5F00 50%, #F79E1B 100%);
+              color: white;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            }
+
+            .card-type-button.mastercard.selected {
+              background: white;
+              color: #EB001B;
+              text-shadow: none;
+              border: 2px solid #EB001B;
+            }
+
+            /* Verve Card Style */
+            .card-type-button.verve {
+              background: linear-gradient(135deg, #2D3092 0%, #4CAF50 100%);
+              color: white;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            }
+
+            .card-type-button.verve.selected {
+              background: white;
+              color: #2D3092;
+              text-shadow: none;
+              border: 2px solid #2D3092;
+            }
+
+            /* Selected States */
+            .card-type-button.selected {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            }
+
+            /* Hover Effects */
+            .card-type-button:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+              opacity: 0.95;
+            }
+
+            /* Active State */
+            .card-type-button:active {
+              transform: translateY(0);
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .form-group {
+              margin-bottom: 1rem;
+            }
+
+            .form-label {
+              display: block;
+              color: white;
+              margin-bottom: 0.25rem;
+              font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+            }
+
+            .form-input {
+              width: 100%;
+              padding: clamp(0.75rem, 2vw, 1rem);
+              border-radius: 0.5rem;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              background: rgba(255, 255, 255, 0.1);
+              color: white;
+              font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+              transition: all 0.2s ease;
+            }
+
+            .form-input::placeholder {
+              color: rgba(255, 255, 255, 0.6);
+              opacity: 1;
+            }
+
+            .form-input:focus {
+              border-color: #10B981;
+              outline: none;
+            }
+
+            .form-input:focus::placeholder {
+              color: rgba(255, 255, 255, 0.4);
+            }
+
+            .form-row {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 1rem;
+            }
+
+            .submit-button {
+              width: 100%;
+              padding: clamp(0.5rem, 1.5vw, 0.75rem);
+              border-radius: 0.5rem;
+              background: #10B981;
+              color: white;
+              font-weight: 600;
+              font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+              transition: all 0.2s ease;
+              margin-top: 1rem;
+            }
+
+            .submit-button:hover:not(:disabled) {
+              background: #059669;
+              transform: translateY(-2px);
+            }
+
+            .submit-button:disabled {
+              opacity: 0.7;
+              cursor: not-allowed;
+            }
+
+            .back-link {
+              display: inline-block;
+              color: #60A5FA;
+              text-decoration: none;
+              font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+              transition: color 0.2s ease;
+              margin-top: 0.75rem;
+            }
+
+            .back-link:hover {
+              color: #3B82F6;
+            }
+
+            @media (max-width: 640px) {
+              .form-row {
+                grid-template-columns: 1fr;
+              }
+            }
+
+            @media (max-height: 700px) {
+              .checkout-container {
+                gap: 0.75rem;
+              }
+
+              .match-preview {
+                padding: 0.5rem;
+              }
+
+              .team-logo {
+                width: clamp(2rem, 6vw, 3rem);
+                height: clamp(2rem, 6vw, 3rem);
+              }
+
+              .form-group {
+                margin-bottom: 0.75rem;
+              }
             }
           `}
         </style>
 
-        {/* Background Section with Team Logos */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-80 mt-40 ">
-          <div className="flex items-center space-x-6 bg-black bg-opacity-100 p-6 rounded-xl transform -translate-x-60">
+        <div className="checkout-container">
+          <div className="match-preview">
+            <div className="match-teams">
             <img
               src={match?.homeTeam.logo || defaultLogo}
               alt={`${match?.homeTeam.name || defaultHomeTeam} Logo`}
-              className="w-32 h-32 object-contain"
+                className="team-logo"
             />
-            <span className="text-3xl font-bold text-green-400">VS</span>
+              <span className="vs-text">VS</span>
             <img
               src={match?.awayTeam.logo || defaultLogo}
               alt={`${match?.awayTeam.name || defaultAwayTeam} Logo`}
-              className="w-32 h-32 object-contain"
+                className="team-logo"
             />
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="relative max-w-5xl mx-auto flex flex-col md:flex-row items-start mt-12 z-10 px-4">
-          {/* Left Section - Ticket Info */}
-          <div className="w-full md:w-1/2 flex flex-col items-center mb-8 md:mb-0">
-            <div className="bg-black bg-opacity-80 p-8 rounded-xl shadow-2xl text-center w-full max-w-md">
-              <h2 className="text-3xl font-bold mb-3 text-white">
-                {match
-                  ? `${match.homeTeam.name.toUpperCase()} vs ${match.awayTeam.name.toUpperCase()}`
-                  : `${defaultHomeTeam} vs ${defaultAwayTeam}`}
-              </h2>
-              <p className="text-lg mb-3 text-white">
+          <div className="checkout-content">
+            <div className="ticket-info">
+              <h2 className="ticket-header">Ticket Details</h2>
+              <div className="ticket-details">
+                <div className="detail-row">
+                  <span className="detail-label">Match</span>
+                  <span className="detail-value">
+                    {match ? `${match.homeTeam.name} vs ${match.awayTeam.name}` : `${defaultHomeTeam} vs ${defaultAwayTeam}`}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Date</span>
+                  <span className="detail-value">
                 {match ? formatMatchTime(match.date) : defaultDate}
-              </p>
-              <p className="text-lg mb-3 text-white">
-                <span className="font-semibold">Seat Number:</span> {ticketDetails?.seatNumber || defaultSeatNumber}
-              </p>
-              <p className="text-lg mb-3 text-white">
-                <span className="font-semibold">Venue:</span> {ticketDetails?.VenueName || 'N/A'}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Seat</span>
+                  <span className="detail-value">
+                    {ticketDetails?.seatNumber || defaultSeatNumber}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Venue</span>
+                  <span className="detail-value">
+                    {ticketDetails?.VenueName || 'N/A'}
                 {ticketDetails?.VenueCity && `, ${ticketDetails.VenueCity}`}
-              </p>
-              <p className="text-2xl font-semibold text-white">$160.00</p>
-            </div>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Price</span>
+                  <span className="detail-value">$160.00</span>
+                </div>
+              </div>
           </div>
 
-          {/* Right Section - Payment Form */}
-          <div className="w-full md:w-1/2 md:pl-8">
-            <div className="bg-black text-black bg-opacity-20 p-8 rounded-xl shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-white bg-black bg-opacity-50 p-3 rounded-lg text-center">
-                CHECKOUT
-              </h2>
-              <p className="text-sm text-gray-200 mb-6 text-center">
-                Complete your purchase by providing your payment details
-              </p>
-
-              {/* Card Type */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2 text-gray-200">CARD TYPE</label>
-                <div className="flex space-x-3">
+            <div className="payment-form">
+              <h2 className="form-header">Payment Details</h2>
+              
+              <div className="card-types">
                   <button 
-                    className={`card-button flex-1 ${selectedCardType === 'visa' ? 'border-green-500 border-2' : ''}`}
+                  className={`card-type-button visa ${selectedCardType === 'visa' ? 'selected' : ''}`}
                     onClick={() => setSelectedCardType('visa')}
                     type="button"
                   >
-                    <div className="h-6 mx-auto text-blue-600 font-bold">VISA</div>
+                  VISA
                   </button>
                   <button 
-                    className={`card-button flex-1 ${selectedCardType === 'mastercard' ? 'border-green-500 border-2' : ''}`}
+                  className={`card-type-button mastercard ${selectedCardType === 'mastercard' ? 'selected' : ''}`}
                     onClick={() => setSelectedCardType('mastercard')}
                     type="button"
                   >
-                    <div className="h-6 mx-auto text-red-600 font-bold">MASTERCARD</div>
+                  MASTERCARD
                   </button>
                   <button 
-                    className={`card-button flex-1 ${selectedCardType === 'verve' ? 'border-green-500 border-2' : ''}`}
+                  className={`card-type-button verve ${selectedCardType === 'verve' ? 'selected' : ''}`}
                     onClick={() => setSelectedCardType('verve')}
                     type="button"
                   >
-                    <span className="text-gray-200 font-bold">VERVE</span>
+                  VERVE
                   </button>
-                </div>
               </div>
 
-              {/* Card Number */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2 text-gray-200">CARD NUMBER</label>
+              <div className="form-group">
+                <label className="form-label">Card Number</label>
                 <input
                   type="text"
                   placeholder="**** **** **** ****"
-                  className="input-field"
+                  className="form-input"
                   value={cardNumber}
                   onChange={handleCardNumberChange}
                   maxLength={19}
@@ -461,70 +686,57 @@ const Checkout: React.FC = () => {
                 />
               </div>
 
-              {/* Cardholder Name */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2 text-gray-200">CARDHOLDER NAME</label>
+              <div className="form-group">
+                <label className="form-label">Cardholder Name</label>
                 <input
                   type="text"
                   placeholder="Mohammed Lahkim"
-                  className="input-field"
+                  className="form-input"
                   value={cardholderName}
                   onChange={(e) => setCardholderName(e.target.value.toUpperCase())}
                   required
                 />
               </div>
 
-              {/* Expiry Date and CVV */}
-              <div className="flex space-x-4 mb-6">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium mb-2 text-gray-200">EXPIRATION DATE</label>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Expiration Date</label>
                   <input
                     type="text"
                     placeholder="MM/YY"
-                    className="input-field"
+                    className="form-input"
                     value={expirationDate}
                     onChange={handleExpiryDateChange}
                     maxLength={5}
                     required
                   />
                 </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium mb-2 text-gray-200">CVV CODE</label>
-                  <div className="relative">
+                <div className="form-group">
+                  <label className="form-label">CVV Code</label>
                     <input
                       type="password"
                       placeholder="***"
-                      className="input-field"
+                    className="form-input"
                       value={cvv}
                       onChange={handleCvvChange}
                       maxLength={3}
                       required
                     />
-                  </div>
                 </div>
               </div>
 
-              {/* Pay Button */}
               <button
                 onClick={handlePayment}
-                className="auth-button bg-green-500 text-white hover:bg-green-600"
+                className="submit-button"
                 disabled={!isAuthSuccess || isProcessing}
               >
                 {isProcessing ? 'Processing...' : 'Pay $160.00'}
               </button>
-
-              {/* Secure Payment Note */}
-              <p className="text-xs text-gray-200 mt-4 text-center">
-                Payments are secured and encrypted
-              </p>
-            </div>
           </div>
         </div>
 
-        {/* Back to Cart Link */}
-        <div className="text-center mt-8">
-          <Link to="/cart" className="text-blue-400 font-semibold hover:underline">
-            Back to Cart
+          <Link to="/cart" className="back-link">
+            ← Back to Cart
           </Link>
         </div>
       </div>
@@ -532,4 +744,4 @@ const Checkout: React.FC = () => {
   );
 };
 
-export default Checkout; 
+export default Checkout;
