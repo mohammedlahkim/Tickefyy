@@ -57,7 +57,7 @@ const BuyTicket: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://spring-app:5001/api/users/profile', {
+      const response = await fetch('http://localhost:5001/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -151,7 +151,7 @@ const BuyTicket: React.FC = () => {
       const formData = new FormData();
       formData.append('facePhoto', file);
 
-      const response = await fetch('http://spring-app:5001/api/images', {
+      const response = await fetch('http://localhost:5001/api/images', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
