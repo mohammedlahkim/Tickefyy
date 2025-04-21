@@ -228,7 +228,7 @@ const TicketCart = () => {
       <div className="cart-container">
         <h1 className="cart-heading">Shopping Cart</h1>
         
-        {cartItems.length === 0 ? (
+            {cartItems.length === 0 ? (
           <div className="empty-cart">
             <p>Your cart is empty</p>
             <button 
@@ -238,52 +238,52 @@ const TicketCart = () => {
               Browse Tickets
             </button>
           </div>
-        ) : (
+            ) : (
           <div className="cart-grid">
-            {cartItems.map((match) => (
+                {cartItems.map((match) => (
               <div key={match.id} className="cart-card">
-                <div className="match-info">
-                  <div className="team">
+                    <div className="match-info">
+                      <div className="team">
                     <img 
                       src={match.homeTeam.logo} 
                       alt={`${match.homeTeam.name} logo`} 
                       className="team-logo"
                     />
                     <span className="team-name">{match.homeTeam.name}</span>
-                  </div>
-                  <span className="vs">VS</span>
-                  <div className="team">
+                      </div>
+                      <span className="vs">VS</span>
+                      <div className="team">
                     <img 
                       src={match.awayTeam.logo} 
                       alt={`${match.awayTeam.name} logo`} 
                       className="team-logo"
                     />
                     <span className="team-name">{match.awayTeam.name}</span>
-                  </div>
-                </div>
+                      </div>
+                    </div>
                 
                 <p className="match-time">{formatMatchTime(match.date)}</p>
                 
-                <div className="button-container">
-                  <button 
+                    <div className="button-container">
+                      <button 
                     className="cart-button purchase-button"
-                    onClick={() => handlePurchase(match)}
-                  >
-                    Purchase
-                  </button>
-                  <button
+                        onClick={() => handlePurchase(match)}
+                      >
+                        Purchase
+                      </button>
+                      <button
                     className="cart-button delete-button"
-                    onClick={() => removeFromCart(match.id)}
-                  >
+                        onClick={() => removeFromCart(match.id)}
+                      >
                     Remove
-                  </button>
-                </div>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
   );
 };
 
