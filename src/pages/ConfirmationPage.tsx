@@ -4,6 +4,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from 'react-toastify';
+import Confetti from 'react-confetti'; // Import react-confetti
+import { useWindowSize } from 'react-use'; // Import useWindowSize
 
 interface Match {
   homeTeam: {
@@ -41,6 +43,8 @@ const ConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false); // State for confetti
+  const { width, height } = useWindowSize(); // Get window size
 
   useEffect(() => {
     const fetchTicketDetails = async () => {
@@ -71,6 +75,9 @@ const ConfirmationPage: React.FC = () => {
 
         const ticketData = await response.json();
         setTicket(ticketData);
+        setShowConfetti(true); // Trigger confetti when ticket is loaded
+        // Stop confetti after 5 seconds
+        setTimeout(() => setShowConfetti(false), 5000);
       } catch (error) {
         console.error('Error fetching ticket:', error);
         toast.error('Failed to load ticket details');
@@ -106,13 +113,11 @@ const ConfirmationPage: React.FC = () => {
         useCORS: true,
         allowTaint: true,
         onclone: (clonedDoc) => {
-          // Ensure all styles are captured
           const clonedElement = clonedDoc.getElementById('ticket-container');
           if (clonedElement) {
             (clonedElement as HTMLElement).style.padding = '40px';
             (clonedElement as HTMLElement).style.margin = '20px';
 
-            // Ensure welcome message styles are preserved
             const welcomeMsg = clonedElement.querySelector('.bg-green-700');
             if (welcomeMsg instanceof HTMLElement) {
               welcomeMsg.style.backgroundColor = '#15803d';
@@ -122,7 +127,6 @@ const ConfirmationPage: React.FC = () => {
               welcomeMsg.style.transform = 'none';
             }
 
-            // Force white text color for better visibility
             const textElements = clonedElement.getElementsByTagName('*');
             Array.from(textElements).forEach((el) => {
               if (el instanceof HTMLElement && window.getComputedStyle(el).color === 'rgb(209, 213, 219)') {
@@ -142,12 +146,11 @@ const ConfirmationPage: React.FC = () => {
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth - 40; // 20mm margin on each side
+      const imgWidth = pageWidth - 40;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // Center the image on the page
-      const x = 20; // left margin
-      const y = (pageHeight - imgHeight) / 2; // center vertically
+      const x = 20;
+      const y = (pageHeight - imgHeight) / 2;
       
       pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
       pdf.save(`ticket-${ticket.id}.pdf`);
@@ -177,54 +180,67 @@ const ConfirmationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-6">
+      {/* Confetti Animation */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          numberOfPieces={200}
+          recycle={false}
+          gravity={0.2}
+          initialVelocityY={-30}
+          colors={['#10B981', '#DC2626', '#FFFFFF', '#15803d']}
+        />
+      )}
+
       <style>
         {`
           .actions-container {
             display: flex;
-            justify-content: center; /* Center buttons horizontally */
-            align-items: center; /* Align buttons vertically */
-            gap: 1rem; /* Space between buttons */
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
             width: 100%;
-            max-width: 4xl; /* Match ticket container width */
-            margin-top: 1rem; /* Space below ticket */
+            max-width: 4xl;
+            margin-top: 1rem;
           }
 
           .action-button {
-            padding: 0.75rem 2rem; /* Consistent padding */
-            border-radius: 0.5rem; /* Match other buttons' rounded corners */
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
             font-weight: 600;
-            font-size: 1rem; /* Consistent font size */
+            font-size: 1rem;
             transition: all 0.2s ease;
             text-align: center;
-            min-width: 150px; /* Ensure buttons are wide enough */
+            min-width: 150px;
           }
 
           .back-button {
-            background-color: #4B5563; /* Gray-600 */
+            background-color: #4B5563;
             color: white;
           }
 
           .back-button:hover {
-            background-color: #374151; /* Gray-700 */
+            background-color: #374151;
           }
 
           .download-button {
-            background-color: #10B981; /* Green-500 */
+            background-color: #10B981;
             color: white;
           }
 
           .download-button:hover {
-            background-color: #059669; /* Green-600 */
+            background-color: #059669;
           }
 
           @media (max-width: 640px) {
             .actions-container {
-              flex-direction: column; /* Stack buttons vertically on small screens */
+              flex-direction: column;
             }
 
             .action-button {
-              width: 100%; /* Full width on small screens */
-              max-width: 300px; /* Limit max width */
+              width: 100%;
+              max-width: 300px;
             }
           }
         `}
@@ -237,14 +253,13 @@ const ConfirmationPage: React.FC = () => {
       >
         {/* Welcome Message */}
         <div className="bg-gradient-to-r from-red-600 via-green-600 to-red-600 rounded-t-xl -mx-4 -mt-4 md:-mx-8 md:-mt-8 p-6 text-center relative">
-          {/* Left Logo */}
           <img 
             src="/mlogo.png" 
             alt="CAN 2025 Logo" 
             className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-16 h-16 md:w-24 md:h-24 object-contain"
           />
           
-          <div className="px-20 md:px-32"> {/* Add padding to make space for logos */}
+          <div className="px-20 md:px-32">
             <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3 animate-pulse">
               Welcome to Morocco
             </h2>
@@ -253,7 +268,6 @@ const ConfirmationPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Right Logo */}
           <img 
             src="/mlogo.png" 
             alt="CAN 2025 Logo" 
