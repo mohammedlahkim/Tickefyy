@@ -63,7 +63,7 @@ const ConfirmationPage: React.FC = () => {
           return;
         }
 
-        const response = await fetch(`spring-app:5001/api/tickets/${ticketId}`, {
+        const response = await fetch(`localhost:5001/api/tickets/${ticketId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -51,7 +51,7 @@ const MyTickets: React.FC = () => {
 
         console.log('Fetching tickets with token:', token);
 
-        const response = await fetch('spring-app:5001/api/tickets', {
+        const response = await fetch('localhost:5001/api/tickets', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -228,7 +228,7 @@ const Checkout: React.FC = () => {
       params.append('cvvCode', cvv);
 
       // Create the ticket and purchase
-      const ticketResponse = await fetch('spring-app:5001/api/tickets', {
+      const ticketResponse = await fetch('localhost:5001/api/tickets', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
