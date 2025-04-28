@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Webcam from 'react-webcam';
 import { toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
 
@@ -70,12 +69,10 @@ interface TicketDetails {
 
 interface User {
   token: string;
-  // Add other user properties as needed
 }
 
 interface AuthContextType {
   user: User | null;
-  // Add other context properties as needed
 }
 
 const Checkout: React.FC = () => {
@@ -161,6 +158,26 @@ const Checkout: React.FC = () => {
     }
   };
 
+  // Cardholder name validation (no numbers allowed)
+  const handleCardholderNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[0-9]/g, '').toUpperCase();
+    setCardholderName(value);
+  };
+
+  // Check if card is expired
+  const isCardExpired = (expiry: string): boolean => {
+    if (!expiry.match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)) {
+      return true; // Invalid format
+    }
+
+    const [month, year] = expiry.split('/').map(Number);
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100; // Get last two digits
+    const currentMonth = currentDate.getMonth() + 1; // Months are 0-based in JS
+
+    return year < currentYear || (year === currentYear && month < currentMonth);
+  };
+
   const validateForm = () => {
     if (!cardNumber || cardNumber.replace(/\s/g, '').length < 16) {
       alert('Please enter a valid card number');
@@ -174,6 +191,11 @@ const Checkout: React.FC = () => {
 
     if (!expirationDate || !expirationDate.match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)) {
       alert('Please enter a valid expiration date (MM/YY)');
+      return false;
+    }
+
+    if (isCardExpired(expirationDate)) {
+      alert('The card has expired');
       return false;
     }
 
@@ -197,37 +219,49 @@ const Checkout: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // Get token from localStorage
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication token not found');
       }
 
-      // Create URLSearchParams for the request
-      const params = new URLSearchParams();
+      // Validate and format matchDate to YYYY-MM-DD
+      let formattedMatchDate = '';
+      if (match?.date) {
+        const date = new Date(match.date);
+        if (isNaN(date.getTime())) {
+          throw new Error('Invalid match date');
+        }
+        formattedMatchDate = date.toISOString().split('T')[0]; // Extracts YYYY-MM-DD
+      } else {
+        throw new Error('Match date is required');
+      }
 
-      // Add match details from BuyTicket page
-      params.append('homeTeamName', match?.homeTeam.name || '');
-      params.append('awayTeamName', match?.awayTeam.name || '');
-      params.append('matchDate', match?.date || '');
-      
-      // Add venue and seat details from BuyTicket page
+      // Validate other required fields
+      if (!match?.homeTeam.name || !match?.awayTeam.name) {
+        throw new Error('Match team names are required');
+      }
+      if (!ticketDetails?.VenueName || !ticketDetails?.VenueCity) {
+        throw new Error('Venue details are required');
+      }
+
       const seatNumber = parseInt(ticketDetails?.seatNumber || '0', 10);
       if (isNaN(seatNumber) || seatNumber <= 0) {
         throw new Error('Invalid seat number');
       }
+
+      const params = new URLSearchParams();
+      params.append('homeTeamName', match.homeTeam.name);
+      params.append('awayTeamName', match.awayTeam.name);
+      params.append('matchDate', formattedMatchDate);
       params.append('seatNumber', seatNumber.toString());
-      params.append('VenueName', ticketDetails?.VenueName || '');
-      params.append('VenueCity', ticketDetails?.VenueCity || '');
-      
-      // Add payment details from Checkout page
+      params.append('VenueName', ticketDetails.VenueName);
+      params.append('VenueCity', ticketDetails.VenueCity);
       params.append('cardType', selectedCardType.toUpperCase());
       params.append('cardNumber', cardNumber.replace(/\s/g, ''));
       params.append('cardHolderName', cardholderName);
       params.append('expirationDate', expirationDate);
       params.append('cvvCode', cvv);
 
-      // Create the ticket and purchase
       const ticketResponse = await fetch('http://localhost:5001/api/tickets', {
         method: 'POST',
         headers: {
@@ -246,19 +280,17 @@ const Checkout: React.FC = () => {
       const ticketData = await ticketResponse.json();
       console.log('Ticket created successfully:', ticketData);
       
-      // Remove only the purchased ticket from the cart
       if (match?.id) {
         removeFromCart(match.id);
       }
       
-      // Show success message and navigate to confirmation
       toast.success('Payment processed successfully!');
       navigate('/confirmation', { 
         state: { 
           match,
           ticketDetails: {
             ...ticketDetails,
-            facePhoto: null // Don't pass the file to the next page
+            facePhoto: null
           },
           ticket: ticketData 
         } 
@@ -428,7 +460,6 @@ const Checkout: React.FC = () => {
               opacity: 1;
             }
 
-            /* Visa Card Style */
             .card-type-button.visa {
               background: linear-gradient(135deg, #1A1F71 0%, #2B3190 100%);
               color: white;
@@ -442,7 +473,6 @@ const Checkout: React.FC = () => {
               border: 2px solid #1A1F71;
             }
 
-            /* Mastercard Style */
             .card-type-button.mastercard {
               background: linear-gradient(135deg, #EB001B 0%, #FF5F00 50%, #F79E1B 100%);
               color: white;
@@ -456,7 +486,6 @@ const Checkout: React.FC = () => {
               border: 2px solid #EB001B;
             }
 
-            /* Verve Card Style */
             .card-type-button.verve {
               background: linear-gradient(135deg, #2D3092 0%, #4CAF50 100%);
               color: white;
@@ -470,20 +499,17 @@ const Checkout: React.FC = () => {
               border: 2px solid #2D3092;
             }
 
-            /* Selected States */
             .card-type-button.selected {
               transform: translateY(-2px);
               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             }
 
-            /* Hover Effects */
             .card-type-button:hover {
               transform: translateY(-2px);
               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
               opacity: 0.95;
             }
 
-            /* Active State */
             .card-type-button:active {
               transform: translateY(0);
               box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -596,19 +622,19 @@ const Checkout: React.FC = () => {
         <div className="checkout-container">
           <div className="match-preview">
             <div className="match-teams">
-            <img
-              src={match?.homeTeam.logo || defaultLogo}
-              alt={`${match?.homeTeam.name || defaultHomeTeam} Logo`}
+              <img
+                src={match?.homeTeam.logo || defaultLogo}
+                alt={`${match?.homeTeam.name || defaultHomeTeam} Logo`}
                 className="team-logo"
-            />
+              />
               <span className="vs-text">VS</span>
-            <img
-              src={match?.awayTeam.logo || defaultLogo}
-              alt={`${match?.awayTeam.name || defaultAwayTeam} Logo`}
+              <img
+                src={match?.awayTeam.logo || defaultLogo}
+                alt={`${match?.awayTeam.name || defaultAwayTeam} Logo`}
                 className="team-logo"
-            />
+              />
+            </div>
           </div>
-        </div>
 
           <div className="checkout-content">
             <div className="ticket-info">
@@ -623,7 +649,7 @@ const Checkout: React.FC = () => {
                 <div className="detail-row">
                   <span className="detail-label">Date</span>
                   <span className="detail-value">
-                {match ? formatMatchTime(match.date) : defaultDate}
+                    {match ? formatMatchTime(match.date) : defaultDate}
                   </span>
                 </div>
                 <div className="detail-row">
@@ -636,7 +662,7 @@ const Checkout: React.FC = () => {
                   <span className="detail-label">Venue</span>
                   <span className="detail-value">
                     {ticketDetails?.VenueName || 'N/A'}
-                {ticketDetails?.VenueCity && `, ${ticketDetails.VenueCity}`}
+                    {ticketDetails?.VenueCity && `, ${ticketDetails.VenueCity}`}
                   </span>
                 </div>
                 <div className="detail-row">
@@ -644,33 +670,33 @@ const Checkout: React.FC = () => {
                   <span className="detail-value">$160.00</span>
                 </div>
               </div>
-          </div>
+            </div>
 
             <div className="payment-form">
               <h2 className="form-header">Payment Details</h2>
               
               <div className="card-types">
-                  <button 
+                <button 
                   className={`card-type-button visa ${selectedCardType === 'visa' ? 'selected' : ''}`}
-                    onClick={() => setSelectedCardType('visa')}
-                    type="button"
-                  >
+                  onClick={() => setSelectedCardType('visa')}
+                  type="button"
+                >
                   VISA
-                  </button>
-                  <button 
+                </button>
+                <button 
                   className={`card-type-button mastercard ${selectedCardType === 'mastercard' ? 'selected' : ''}`}
-                    onClick={() => setSelectedCardType('mastercard')}
-                    type="button"
-                  >
+                  onClick={() => setSelectedCardType('mastercard')}
+                  type="button"
+                >
                   MASTERCARD
-                  </button>
-                  <button 
+                </button>
+                <button 
                   className={`card-type-button verve ${selectedCardType === 'verve' ? 'selected' : ''}`}
-                    onClick={() => setSelectedCardType('verve')}
-                    type="button"
-                  >
+                  onClick={() => setSelectedCardType('verve')}
+                  type="button"
+                >
                   VERVE
-                  </button>
+                </button>
               </div>
 
               <div className="form-group">
@@ -693,7 +719,9 @@ const Checkout: React.FC = () => {
                   placeholder="Mohammed Lahkim"
                   className="form-input"
                   value={cardholderName}
-                  onChange={(e) => setCardholderName(e.target.value.toUpperCase())}
+                  onChange={handleCardholderNameChange}
+                  pattern="[A-Za-z\s]*"
+                  title="Numbers are not allowed in the cardholder name"
                   required
                 />
               </div>
@@ -713,15 +741,15 @@ const Checkout: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label className="form-label">CVV Code</label>
-                    <input
-                      type="password"
-                      placeholder="***"
+                  <input
+                    type="password"
+                    placeholder="***"
                     className="form-input"
-                      value={cvv}
-                      onChange={handleCvvChange}
-                      maxLength={3}
-                      required
-                    />
+                    value={cvv}
+                    onChange={handleCvvChange}
+                    maxLength={3}
+                    required
+                  />
                 </div>
               </div>
 
@@ -732,8 +760,8 @@ const Checkout: React.FC = () => {
               >
                 {isProcessing ? 'Processing...' : 'Pay $160.00'}
               </button>
+            </div>
           </div>
-        </div>
 
           <Link to="/cart" className="back-link">
             ← Back to Cart
