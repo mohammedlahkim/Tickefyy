@@ -91,9 +91,29 @@ const Signup = () => {
       toast.error(`${translations[language].password} ${isRTL ? "مطلوب" : "is required"}`);
       return false;
     }
-    if (!phone || phone.length < 10) {
-      toast.error(`${translations[language].phone} ${isRTL ? "يجب أن يكون 10 أرقام على الأقل" : "must be at least 10 digits"}`);
+    if (!phone) {
+      toast.error(`${translations[language].phone} ${isRTL ? "مطلوب" : "is required"}`);
       return false;
+    }
+    // Check phone number length for Morocco (+212)
+    if (phone.startsWith("+212")) {
+      const nationalNumber = phone.slice(4); // Remove "+212"
+      if (nationalNumber.length !== 9) {
+        toast.error(
+          language === "Arabic"
+            ? "رقم الهاتف يجب أن يكون 9 أرقام بعد +212"
+            : language === "French"
+            ? "Le numéro de téléphone doit comporter 9 chiffres après +212"
+            : "Phone number must be 9 digits after +212"
+        );
+        return false;
+      }
+    } else {
+      // For other countries, keep the original minimum length check
+      if (phone.length < 10) {
+        toast.error(`${translations[language].phone} ${isRTL ? "يجب أن يكون 10 أرقام على الأقل" : "must be at least 10 digits"}`);
+        return false;
+      }
     }
     return true;
   };
@@ -118,18 +138,17 @@ const Signup = () => {
       console.log("Signup API Response Data:", signupRes.data);
 
       // 2. Save the received JWT token
-      const { jwt } = signupRes.data; // Reverted: Only expect JWT in response data
+      const { jwt } = signupRes.data;
       if (!jwt) {
         console.error("JWT token missing in signup response.");
         throw new Error("Signup completed but no JWT token received.");
       }
-      // REMOVED: Check for user data in response
       localStorage.setItem("token", jwt);
       console.log("JWT token saved to localStorage.");
 
-      // 3. Construct User object manually (Reverted)
+      // 3. Construct User object manually
       const newUserForContext: User = {
-        id: 0, // Reverted: Placeholder ID
+        id: 0,
         f_name: f_name.trim(),
         l_name: l_name.trim(),
         email: email.trim(),
@@ -141,7 +160,7 @@ const Signup = () => {
       };
       console.log("Constructed user object for context (manual):", newUserForContext);
       
-      // 4. Call context login with the manually constructed user data (Reverted)
+      // 4. Call context login with the manually constructed user data
       console.log("Calling context login function...");
       login(newUserForContext); 
       console.log("Context login function called.");
@@ -151,12 +170,11 @@ const Signup = () => {
       // Delay navigation slightly to allow state update to settle
       setTimeout(() => {
         console.log("Navigating to /facialrecognition (delayed)...");
-        navigate("/facialrecognition", { replace: true }); // Use replace to avoid back button issues
-      }, 0); // Minimal delay
+        navigate("/facialrecognition", { replace: true });
+      }, 0);
 
     } catch (err: any) { 
       console.error("SIGNUP FAILED:", err);
-      // Log specific parts of the error if available
       if (err.response) {
         console.error("Signup Error Response Data:", err.response.data);
         console.error("Signup Error Response Status:", err.response.status);
@@ -247,7 +265,7 @@ const Signup = () => {
       consentTerms: "أوافق على الشروط وسياسة الخصوصية.",
       termsTitle: "التعرف على الوجه",
       termsIntro: "بالتسجيل، فإنك توافق على الشروط التالية:",
-      term1: "يتم استخدام التعرف على الوجه فقط للأغراض التالية:",
+      term1: "يتم استخدام التعرف على الوجه فقط للأغراض ال Latin1 التالية:",
       term2: "التحقق من الهوية وتسجيل دخول المستخدم",
       term3: "التحقق من التذاكر والتحكم في الوصول",
       term4: "منع الاحتيال وتعزيز الأمان",
@@ -310,10 +328,28 @@ const Signup = () => {
             />
 
             <PhoneInput
-              country={"us"}
+              country={"ma"} // Set default country to Morocco (+212)
               value={phone}
-              onChange={(phone) => setPhone(phone)}
-              inputProps={{ required: true }}
+              onChange={(phone, country: any) => {
+                // Check if the country code is Morocco (+212)
+                if (country.dialCode === "212") {
+                  // Extract the national number (without country code)
+                  const nationalNumber = phone.slice(country.dialCode.length);
+                  // Trim to 9 digits if more are entered
+                  if (nationalNumber.length <= 9) {
+                    setPhone(phone);
+                  } else {
+                    setPhone(`+212${nationalNumber.slice(0, 9)}`);
+                  }
+                } else {
+                  // For other countries, allow normal behavior
+                  setPhone(phone);
+                }
+              }}
+              inputProps={{
+                required: true,
+                maxLength: phone.startsWith("+212") ? 12 : undefined, // +212 (3 chars) + 9 digits
+              }}
               inputStyle={{
                 width: "100%",
                 height: "48px",
@@ -354,10 +390,7 @@ const Signup = () => {
             </div>
 
             <div className={`text-xs text-white space-y-2 mt-4 ${isRTL ? "text-right" : "text-left"}`}>
-              <label className="flex items-start gap-2">
-                <input type="checkbox" className="mt-1" required />
-                <span>{translations[language].consentSMS}</span>
-              </label>
+            
               <label className="flex items-start gap-2 text-xs">
                 <input type="checkbox" className="mt-1" required />
                 <span>

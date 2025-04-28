@@ -80,7 +80,7 @@ const FacialRecognition = () => {
         toast.success("Image quality accepted! Proceeding...");
         navigate('/'); 
       } else {
-        toast.error("Face photo quality is not sufficient. Please recapture your face.");
+        toast.error("Please approach the camera to your face");
         recapture();
       }
     } catch (error: any) {
