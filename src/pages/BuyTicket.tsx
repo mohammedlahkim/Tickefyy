@@ -159,7 +159,7 @@ const BuyTicket: React.FC = () => {
         body: formData
       });
 
-      const data = await response.json();
+      const data = await response.text();
       
       if (response.ok) {
         if (data === "Image quality validated.") {
