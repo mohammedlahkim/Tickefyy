@@ -95,9 +95,11 @@ const FacialRecognition = () => {
           toast.error("Authentication failed. Please log in again.");
           navigate('/login');
         } else {
-          toast.error(typeof error.response.data === 'string' 
+          const err = typeof error.response.data === 'string' 
             ? error.response.data 
-            : "Image quality assessment failed. Please try again.");
+            : "Image quality assessment failed. Please try again.";
+          
+          toast.error(err);
         }
       } else if (error.request) {
         console.error("No response received:", error.request);
