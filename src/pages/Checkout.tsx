@@ -231,7 +231,7 @@ const Checkout: React.FC = () => {
         if (isNaN(date.getTime())) {
           throw new Error('Invalid match date');
         }
-        formattedMatchDate = date.toISOString().split('T')[0]; // Extracts YYYY-MM-DD
+        formattedMatchDate = date.toISOString().slice(0,16); 
       } else {
         throw new Error('Match date is required');
       }
