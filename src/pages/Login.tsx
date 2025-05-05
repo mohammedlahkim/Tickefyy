@@ -56,7 +56,7 @@ const Login = () => {
         <img
           src="/mlogo.png"
           alt="Logo"
-          className="h-16 w-auto object-contain"
+          className="h-24 w-auto object-contain"
         />
       </div>
 
@@ -110,7 +110,7 @@ const Login = () => {
         </div>
       </div>
 
-      <div className="text-center my-2 text-white">OR</div>
+      <div className="text-center text-xl my-2 text-white font-extrabold">OR</div>
 
       {/* Input Fields */}
       <form className="space-y-3 w-full" onSubmit={handleSubmit}>

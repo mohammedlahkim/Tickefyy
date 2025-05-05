@@ -191,14 +191,14 @@ body, html, #root {
   padding: 10px 15px; /* Updated from 14px */
   border-radius: 20px; /* Updated from 12px */
   background-color: rgba(255, 255, 255, 0.3); /* Updated from 0.2 opacity */
-  color: white;
+  color: #434343;
   backdrop-filter: blur(8px); /* Added backdrop-filter */
   border: none;
   outline: none;
 }
 
 .input-field::placeholder {
-  color: rgba(255, 255, 255, 0.8); /* Updated from 0.9 opacity */
+  color: #434343; /* Updated from 0.9 opacity */
 }
 
 /* ✅ Phone Input specific styling */

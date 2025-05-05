@@ -283,7 +283,7 @@ const Signup = () => {
       <div className="flex md:flex-row justify-center items-center gap-6 w-full max-w-5xl mx-auto">
         <div className="bg-white bg-opacity-15 backdrop-blur-lg shadow-2xl rounded-xl p-8 w-full max-w-[480px]">
           <div className="flex justify-center items-center mb-4">
-            <img src="/mlogo.png" alt="Logo" className="h-16 w-auto object-contain" />
+            <img src="/mlogo.png" alt="Logo" className="h-24 w-auto object-contain" />
           </div>
           <h2 className="text-center text-3xl font-bold text-white mb-6">
             {translations[language].signup}
@@ -355,7 +355,7 @@ const Signup = () => {
                 height: "48px",
                 borderRadius: "25px",
                 backgroundColor: "rgba(255,255,255,0.3)",
-                color: "white",
+                color: "#434343",
                 paddingLeft: isRTL ? "15px" : "50px",
                 paddingRight: isRTL ? "50px" : "15px",
                 border: "none",
@@ -382,7 +382,7 @@ const Signup = () => {
               />
               <button
                 type="button"
-                className={`absolute ${isRTL ? "left-4" : "right-4"} top-3 text-white text-sm`}
+                className={`absolute ${isRTL ? "left-4" : "right-4"} top-3 text-[#434343] text-sm`}
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? translations[language].hide : translations[language].show}
