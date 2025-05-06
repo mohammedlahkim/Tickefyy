@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
+import API_BASE_URL from "../api/api.ts";
 
 // Simulated AuthComponent for demonstration
 interface AuthComponentProps {
@@ -262,7 +263,7 @@ const Checkout: React.FC = () => {
       params.append('expirationDate', expirationDate);
       params.append('cvvCode', cvv);
 
-      const ticketResponse = await fetch('http://localhost:5001/api/tickets', {
+      const ticketResponse = await fetch(`${API_BASE_URL}/api/tickets`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

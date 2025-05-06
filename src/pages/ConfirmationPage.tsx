@@ -5,7 +5,8 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from 'react-toastify';
 import Confetti from 'react-confetti'; // Import react-confetti
-import { useWindowSize } from 'react-use'; // Import useWindowSize
+import { useWindowSize } from 'react-use';
+import API_BASE_URL from "../api/api.ts"; // Import useWindowSize
 
 export interface Match {
   homeTeam: {
@@ -63,7 +64,7 @@ const ConfirmationPage: React.FC = () => {
           return;
         }
 
-        const response = await fetch(`http://localhost:5001/api/tickets/${ticketId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

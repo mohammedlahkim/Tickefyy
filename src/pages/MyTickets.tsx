@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import API_BASE_URL from "../api/api.ts";
 
 interface Ticket {
   id: string;
@@ -51,7 +52,7 @@ const MyTickets: React.FC = () => {
 
         console.log('Fetching tickets with token:', token);
 
-        const response = await fetch('http://localhost:5001/api/tickets', {
+        const response = await fetch(`${API_BASE_URL}/api/tickets`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

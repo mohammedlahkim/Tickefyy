@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getMatchById } from '../utils/matchDataService';
 import Webcam from 'react-webcam';
 import { toast } from 'react-toastify';
+import API_BASE_URL from "../api/api.ts";
 
 interface Match {
   matchId: number;
@@ -57,7 +58,7 @@ const BuyTicket: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5001/api/users/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -151,7 +152,7 @@ const BuyTicket: React.FC = () => {
       const formData = new FormData();
       formData.append('facePhoto', file);
 
-      const response = await fetch('http://localhost:5001/api/images', {
+      const response = await fetch(`${API_BASE_URL}/api/images`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
