@@ -106,7 +106,7 @@ const BuyTicket: React.FC = () => {
         city: fullMatchDetails.fixture.venue.city || ''
       });
     }
-  }, [match, user, navigate, location]);
+  }, [match, user, navigate, location, venueDetails]);
 
   // Effect to fetch profile when face capture modal is shown
   useEffect(() => {

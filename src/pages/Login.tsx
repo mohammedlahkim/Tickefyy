@@ -1,14 +1,20 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
-import { useAuth } from "../context/AuthContext";
+import {useAuth} from "../context/AuthContext";
 import FacebookLogin from "../components/FacebookLogin";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, {AxiosError} from "axios";
 import API_BASE_URL from "../api/api";
 import { getProfile } from "../api/user";
 import { toast } from "react-toastify";
+
+interface DecodedToken {
+  name: string;
+  email: string;
+  picture: string;
+}
 
 const Login = () => {
   const { login, user } = useAuth();
@@ -43,8 +49,12 @@ const Login = () => {
       setTimeout(() => {
         navigate("/");
       }, 1500); // Delay to allow toast to show
-    } catch (err: any) {
-      console.error("Login error", err.response?.data || err.message);
+    } catch (err: unknown) {
+      if (err instanceof AxiosError)
+        console.error("Login error", err.response?.data || err.message);
+      else
+        console.error("Unknown error occurred.");
+
       toast.error("Login failed!");
     }
   };
@@ -80,9 +90,11 @@ const Login = () => {
           {/* Overlay the GoogleLogin component with zero opacity */}
           <GoogleLogin
             onSuccess={(credentialResponse) => {
-              const decoded: any = jwtDecode(credentialResponse.credential!);
+              const decoded : DecodedToken = jwtDecode(credentialResponse.credential!);
+              const [f_name, l_name] = decoded.name.split(" ");
               login({
-                name: decoded.name,
+                f_name,
+                l_name,
                 email: decoded.email,
                 picture: decoded.picture,
               });

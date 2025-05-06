@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
 import { getMatchData, getMatchById, Match } from '../utils/matchDataService';

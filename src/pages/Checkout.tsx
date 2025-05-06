@@ -88,7 +88,7 @@ const Checkout: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedCardType, setSelectedCardType] = useState<'visa' | 'mastercard' | 'verve'>('visa');
   const { user } = useAuth() as AuthContextType;
-  const { clearCart, removeFromCart } = useCart();
+  const { removeFromCart } = useCart();
 
   const formatMatchTime = (utcDate: string) => {
     const date = new Date(utcDate);

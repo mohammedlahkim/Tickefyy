@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useAuth, User } from "../context/AuthContext";
@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../api/api";
 import { toast } from "react-toastify";
-import { getProfile } from "../api/user";
 
 type Language = "English" | "French" | "Arabic";
 
@@ -49,7 +48,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [language, setLanguage] = useState<Language>("English");
 
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const isRTL = language === "Arabic";

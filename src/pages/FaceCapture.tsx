@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { useAuth } from '../context/AuthContext'; // To get user ID
 import { useNavigate } from 'react-router-dom';

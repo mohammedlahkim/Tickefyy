@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 
 const ContactUs = () => {
   // State for Contact Information (left section)
@@ -19,7 +18,7 @@ const ContactUs = () => {
   });
 
   // Handler for Contact Information inputs
-  const handleContactInfoChange = (e) => {
+  const handleContactInfoChange = (e : React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setContactInfo((prev) => ({
       ...prev,
@@ -28,7 +27,7 @@ const ContactUs = () => {
   };
 
   // Handler for Contact US form inputs
-  const handleFormChange = (e) => {
+  const handleFormChange = (e : React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -37,7 +36,7 @@ const ContactUs = () => {
   };
 
   // Handler for form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = (e : React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Form Submitted:", formData);
     // You can add logic here to send the form data to a backend

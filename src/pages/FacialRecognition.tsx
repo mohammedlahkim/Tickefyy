@@ -1,18 +1,18 @@
-import React, { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
 import { toast } from "react-toastify";
-import axios from "axios";
+import axios, {AxiosError} from "axios";
 import API_BASE_URL from "../api/api";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+// import { useAuth } from "../context/AuthContext";
 import { dataURLtoFile } from "../api/user";
-import { authHeader } from "../utils/authHeader";
+// import { authHeader } from "../utils/authHeader";
 
 const FacialRecognition = () => {
   const webcamRef = useRef<Webcam>(null);
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [isCheckingQuality, setIsCheckingQuality] = useState(false);
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const navigate = useNavigate();
 
   const capture = useCallback(() => {
@@ -83,32 +83,37 @@ const FacialRecognition = () => {
         toast.error("Please approach the camera to your face");
         recapture();
       }
-    } catch (error: any) {
-      console.error("Error assessing image quality:", error);
-      
-      if (error.response) {
-        console.error("Response status:", error.response.status);
-        console.error("Response data:", error.response.data);
-        
-        // More specific error handling
-        if (error.response.status === 401) {
-          toast.error("Authentication failed. Please log in again.");
-          navigate('/login');
+    } catch (error : unknown) {
+      if (error instanceof AxiosError) {
+        console.error("Error assessing image quality:", error);
+
+        if (error.response) {
+          console.error("Response status:", error.response.status);
+          console.error("Response data:", error.response.data);
+
+          // More specific error handling
+          if (error.response.status === 401) {
+            toast.error("Authentication failed. Please log in again.");
+            navigate('/login');
+          } else {
+            const err = typeof error.response.data === 'string'
+                ? error.response.data
+                : "Image quality assessment failed. Please try again.";
+
+            toast.error(err);
+          }
+        } else if (error.request) {
+          console.error("No response received:", error.request);
+          toast.error("No response from server. Please check your connection.");
         } else {
-          const err = typeof error.response.data === 'string' 
-            ? error.response.data 
-            : "Image quality assessment failed. Please try again.";
-          
-          toast.error(err);
+          console.error("Error message:", error.message);
+          toast.error("An error occurred. Please try again.");
         }
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        toast.error("No response from server. Please check your connection.");
       } else {
-        console.error("Error message:", error.message);
-        toast.error("An error occurred. Please try again.");
+        console.error("Unknown error:", error);
+        toast.error("An unknown error occurred.");
       }
-      
+
       recapture();
     } finally {
       setIsCheckingQuality(false);

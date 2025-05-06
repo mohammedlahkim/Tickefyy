@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import Confetti from 'react-confetti'; // Import react-confetti
 import { useWindowSize } from 'react-use'; // Import useWindowSize
 
-interface Match {
+export interface Match {
   homeTeam: {
     name: string;
     logo: string;
@@ -19,7 +19,7 @@ interface Match {
   date: string;
 }
 
-interface TicketDetails {
+export interface TicketDetails {
   seatNumber: string;
   VenueName: string;
   VenueCity: string;

@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify";
-import axios from "axios";
-import API_BASE_URL from "../api/api";
-import { getMatchData } from '../utils/matchDataService';
+import {getMatchData, Match, MatchResponse} from '../utils/matchDataService';
 
 interface Fixture {
   id: number;
@@ -35,11 +32,11 @@ const HomePage = () => {
       try {
         setLoading(true);
         console.log('Starting to load matches...');
-        const matchData = await getMatchData();
+        const matchData : MatchResponse = await getMatchData();
         console.log('Received match data:', matchData);
         
         if (matchData && matchData.response && Array.isArray(matchData.response)) {
-          const matches = matchData.response.slice(0, 3).map((match: any) => ({
+          const matches = matchData.response.slice(0, 3).map((match: Match) => ({
             id: match.fixture.id,
             homeTeam: {
               name: match.teams.home.name,
