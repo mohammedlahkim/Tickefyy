@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import {useAuth, User} from "../context/AuthContext";
+import {useAuth} from "../context/AuthContext";
 import { FaFacebook } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
