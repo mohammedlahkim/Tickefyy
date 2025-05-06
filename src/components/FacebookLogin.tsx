@@ -1,8 +1,18 @@
 import { useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import {useAuth, User} from "../context/AuthContext";
 import { FaFacebook } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+
+interface FacebookUserInfo {
+  name: string;
+  email: string;
+  picture: {
+    data: {
+      url: string;
+    };
+  };
+}
 
 const FacebookLogin = () => {
   const { login } = useAuth();
@@ -35,10 +45,12 @@ const FacebookLogin = () => {
   };
 
   const fetchUserInfo = () => {
-    window.FB.api("/me", { fields: "name,email,picture" }, (userInfo: any) => {
+    window.FB.api("/me", { fields: "name,email,picture" }, (userInfo: FacebookUserInfo) => {
       if (userInfo) {
+        const [f_name, l_name] = userInfo.name.split(' ');
         login({
-          name: userInfo.name,
+          f_name,
+          l_name,
           email: userInfo.email,
           picture: userInfo.picture.data.url,
         });
