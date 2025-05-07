@@ -71,10 +71,7 @@ const FacialRecognition = () => {
       console.log("Backend response:", response.data);
       
       // Handle both object and string response formats
-      const isImageValid = 
-        typeof response.data === 'object' && 'is_image_valid' in response.data 
-          ? response.data.is_image_valid 
-          : response.data === "Image quality validated.";
+      const isImageValid = response.status === 200;
 
       if (isImageValid) {
         toast.success("Image quality accepted! Proceeding...");
