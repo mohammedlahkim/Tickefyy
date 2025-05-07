@@ -85,8 +85,8 @@ const FacialRecognition = () => {
           navigate('/login');
         } else {
           const msg =
-            err.response?.data?.message ||
-            err.message ||
+            error.response?.data?.message ||
+            error.message ||
             'Unexpected error — please try again.';
           
           toast.error(msg);
