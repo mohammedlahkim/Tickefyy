@@ -69,22 +69,9 @@ const FacialRecognition = () => {
       });
 
       console.log("Backend response:", response.data);
-      
-      // Handle both object and string response formats
-      const isImageValid = response.status === 200;
 
-      if (isImageValid) {
-        toast.success("Image quality accepted! Proceeding...");
-        navigate('/'); 
-      } else {
-        let msg = "Unexpected error";
-
-        if ("message" in response.data)
-          msg = response.data.message
-        
-        toast.error(msg);
-        recapture();
-      }
+      toast.success("Image quality accepted! Proceeding...");
+      navigate('/'); 
     } catch (error: any) {
       console.error("Error assessing image quality:", error);
       
@@ -97,11 +84,12 @@ const FacialRecognition = () => {
           toast.error("Authentication failed. Please log in again.");
           navigate('/login');
         } else {
-          const err = typeof error.response.data === 'string' 
-            ? error.response.data 
-            : "Image quality assessment failed. Please try again.";
+          const msg =
+            err.response?.data?.message ||
+            err.message ||
+            'Unexpected error — please try again.';
           
-          toast.error(err);
+          toast.error(msg);
         }
       } else if (error.request) {
         console.error("No response received:", error.request);
