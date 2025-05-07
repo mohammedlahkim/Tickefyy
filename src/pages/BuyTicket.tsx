@@ -173,11 +173,11 @@ const BuyTicket: React.FC = () => {
         if ("message" in data)
           msg = data.message;
         
-        toast.error(data.message);
+        toast.error(msg);
       }
     } catch (error) {
       console.error('Error validating face photo:', error);
-      toast.error('Image quality is too low for facial recognition. Please upload a clearer image.');
+      toast.error('An unexpected error occured');
     } finally {
       setIsCheckingQuality(false);
     }
