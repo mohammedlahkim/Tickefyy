@@ -77,7 +77,12 @@ const FacialRecognition = () => {
         toast.success("Image quality accepted! Proceeding...");
         navigate('/'); 
       } else {
-        toast.error("Please approach the camera to your face");
+        let msg = "Unexpected error";
+
+        if ("message" in response.data)
+          msg = response.data.message
+        
+        toast.error(msg);
         recapture();
       }
     } catch (error: any) {
