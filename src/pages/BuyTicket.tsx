@@ -159,21 +159,21 @@ const BuyTicket: React.FC = () => {
         body: formData
       });
 
-      const data = await response.text();
+      const data = await response.json();
       
-      if (response.ok) {
-        if (data === "Image quality validated.") {
+      if (response.status === 200) {
           setFacePhoto(file);
           toast.success('Face photo accepted!');
           setShowFaceCapture(false);
           proceedToCheckout();
-        } else {
-          toast.error('Image quality is too low for facial recognition. Please upload a clearer image.');
-        }
       } else {
         // Handle specific error messages from the backend
-        const errorMessage = typeof data === 'string' ? data : 'Image quality is too low for facial recognition. Please upload a clearer image.';
-        toast.error(errorMessage);
+        let msg = "Unexpected error";
+        
+        if ("message" in data)
+          msg = data.message;
+        
+        toast.error(data.message);
       }
     } catch (error) {
       console.error('Error validating face photo:', error);
